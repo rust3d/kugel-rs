@@ -21,6 +21,10 @@ impl Buffer {
     pub fn is_buffer(&self) -> bool {
         unsafe { gl::IsBuffer(self.id) == gl::TRUE }
     }
+
+    pub fn bind(&self, target: GLenum) {
+        unsafe { gl::BindBuffer(target, self.id) };
+    }
 }
 
 impl Drop for Buffer {
