@@ -19,23 +19,14 @@ impl PartialEq for Shader {
 }
 
 impl Shader {
-    pub fn new(ty: GLenum) -> Result<Shader, ShaderError> {
-        let shader = Shader {
+    pub fn new(ty: GLenum) -> Shader {
+        Shader {
             id: unsafe { gl::CreateShader(ty) }
-        };
-
-        if !shader.is_shader() {
-            return Err(ShaderError::CreateFailed);
         }
-
-        Ok(shader)
     }
 
     pub fn compile_new(source: &str, ty: GLenum) -> Result<Shader, ShaderError> {
-        let mut shader = match Shader::new(ty) {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        let mut shader = Shader::new(ty);
 
         shader.set_source(source);
 
@@ -144,7 +135,6 @@ impl ParamFromShader for GLint {
 }
 
 pub enum ShaderError {
-    CreateFailed,
     CompileFailed(String),
     Other(String),
 }
@@ -152,7 +142,6 @@ pub enum ShaderError {
 impl fmt::Display for ShaderError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &ShaderError::CreateFailed => "Failed to create shader object.".fmt(f),
             &ShaderError::CompileFailed(ref log) => write!(f, "[compile failed]\n{}", log),
             &ShaderError::Other(ref err) => write!(f, "[other error]\n{}", err),
         }

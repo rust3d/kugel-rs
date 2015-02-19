@@ -23,24 +23,15 @@ impl PartialEq for Program {
 }
 
 impl Program {
-    pub fn new() -> Result<Program, ProgramError> {
-        let program = Program {
+    pub fn new() -> Program {
+        Program {
             id: unsafe { gl::CreateProgram() },
             shaders: Vec::with_capacity(2),
-        };
-
-        if !program.is_program() {
-            return Err(ProgramError::CreateFailed);
         }
-
-        Ok(program)
     }
 
     pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Program, ProgramError> {
-        let mut program = match Program::new() {
-            Ok(r) => r,
-            Err(e) => return Err(e),
-        };
+        let mut program = Program::new();
 
         for shader in shaders {
             if let Err(obj) = program.attach_shader(shader.clone()) {
@@ -166,7 +157,6 @@ impl ParamFromProgram for GLint {
 }
 
 pub enum ProgramError {
-    CreateFailed,
     LinkFailed(String),
     Other(String),
 }
@@ -174,7 +164,6 @@ pub enum ProgramError {
 impl fmt::Display for ProgramError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &ProgramError::CreateFailed => "Failed to create program object.".fmt(f),
             &ProgramError::LinkFailed(ref log) => write!(f, "[link failed]\n{}", log),
             &ProgramError::Other(ref err) => write!(f, "[other error]\n{}", err),
         }

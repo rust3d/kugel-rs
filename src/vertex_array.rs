@@ -16,4 +16,20 @@ impl VertexArray {
             .map(|id| VertexArray { id: id })
             .collect()
     }
+
+    /// Returns true if contains correct vertex array object and it
+    /// was bound at least once.
+    pub fn is_vertex_array(&self) -> bool {
+        unsafe { gl::IsVertexArray(self.id) == gl::TRUE }
+    }
+
+    pub fn bind(&self) {
+        unsafe { gl::BindVertexArray(self.id) };
+    }
+}
+
+impl Drop for VertexArray {
+    fn drop(&mut self) {
+        unsafe { gl::DeleteVertexArrays(1, &mut self.id) };
+    }
 }
