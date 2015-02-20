@@ -1,6 +1,9 @@
 use gl;
 use gl::types::*;
 
+use std::rc::Rc;
+use context::buffer_target;
+
 pub struct Buffer {
     id: GLuint,
 }
@@ -25,9 +28,16 @@ impl Buffer {
     pub fn is_buffer(&self) -> bool {
         unsafe { gl::IsBuffer(self.id) == gl::TRUE }
     }
+}
 
-    pub fn bind(&self, target: GLenum) {
-        unsafe { gl::BindBuffer(target, self.id) };
+pub trait BindableBuffer {
+    fn bind<'a, T>(&self, target: &'a mut T) -> &'a mut T where T : buffer_target::BindableBufferTarget;
+}
+
+impl BindableBuffer for Rc<Buffer> {
+    fn bind<'a, T>(&self, target: &'a mut T) -> &'a mut T where T : buffer_target::BindableBufferTarget {
+        target.bind(self);
+        target
     }
 }
 

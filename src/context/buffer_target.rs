@@ -23,27 +23,46 @@ macro_rules! extend_base_buffer_target {
 }
 
 pub trait BindableBufferTarget {
-    fn bind(&mut self, buffer: Rc<Buffer>) -> Result<(), BindBufferError>;
+    fn bind(&mut self, buffer: &Rc<Buffer>) -> Result<(), BindBufferError>;
     fn unbind(&mut self);
+}
+
+macro_rules! impl_bindable_buffer_target {
+    ( $Type:ty, $GLtarget:path ) => {
+        impl BindableBufferTarget for $Type {
+            fn bind(&mut self, buffer: &Rc<Buffer>) -> Result<(), BindBufferError> {
+                self.buffer = Some(buffer.clone());
+                unsafe { gl::BindBuffer($GLtarget, buffer.get_id()) };
+                Ok(())
+            }
+
+            fn unbind(&mut self) {
+                unsafe { gl::BindBuffer($GLtarget, 0) };
+                self.buffer = None;
+            }
+        }
+
+        impl Drop for $Type {
+            fn drop(&mut self) {
+                self.unbind();
+            }
+        }
+    };
 }
 
 extend_base_buffer_target!(ArrayBufferTarget);
 extend_base_buffer_target!(ElementArrayBufferTarget);
 
+impl_bindable_buffer_target!(ArrayBufferTarget, gl::ARRAY_BUFFER);
+impl_bindable_buffer_target!(ElementArrayBufferTarget, gl::ELEMENT_ARRAY_BUFFER);
+
 pub struct ArrayBufferTarget {
     buffer: Option<Rc<Buffer>>,
 }
 
-impl BindableBufferTarget for ArrayBufferTarget {
-    fn bind(&mut self, buffer: Rc<Buffer>) -> Result<(), BindBufferError> {
-        self.buffer = Some(buffer.clone());
-        unsafe { gl::BindBuffer(gl::ARRAY_BUFFER, buffer.get_id()) };
-        Ok(())
-    }
-
-    fn unbind(&mut self) {
-        unsafe { gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0) };
-        self.buffer = None;
+impl ArrayBufferTarget {
+    pub fn new() -> ArrayBufferTarget {
+        ArrayBufferTarget { buffer: None }
     }
 }
 
@@ -51,16 +70,9 @@ pub struct ElementArrayBufferTarget {
     buffer: Option<Rc<Buffer>>,
 }
 
-impl BindableBufferTarget for ElementArrayBufferTarget {
-    fn bind(&mut self, buffer: Rc<Buffer>) -> Result<(), BindBufferError> {
-        self.buffer = Some(buffer.clone());
-        unsafe { gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, buffer.get_id()) };
-        Ok(())
-    }
-
-    fn unbind(&mut self) {
-        unsafe { gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0) };
-        self.buffer = None;
+impl ElementArrayBufferTarget {
+    pub fn new() -> ElementArrayBufferTarget {
+        ElementArrayBufferTarget { buffer: None }
     }
 }
 
