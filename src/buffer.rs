@@ -17,6 +17,10 @@ impl Buffer {
             .collect()
     }
 
+    pub fn get_id(&self) -> GLuint {
+        self.id
+    }
+
     /// Returns true if contains correct buffer object.
     pub fn is_buffer(&self) -> bool {
         unsafe { gl::IsBuffer(self.id) == gl::TRUE }
