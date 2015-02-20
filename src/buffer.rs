@@ -1,6 +1,8 @@
 use gl;
 use gl::types::*;
 
+use std::rc::Rc;
+
 pub struct Buffer {
     id: GLuint,
 }
@@ -33,4 +35,12 @@ impl Drop for Buffer {
             unsafe { gl::DeleteBuffers(1, &mut self.id) };
         }
     }
+}
+
+pub struct ArrayBufferTarget {
+    buffer: Option<Rc<Buffer>>,
+}
+
+pub struct ElementArrayBufferTarget {
+    buffer: Option<Rc<Buffer>>,
 }
