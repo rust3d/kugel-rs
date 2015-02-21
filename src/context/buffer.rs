@@ -1,7 +1,10 @@
 use gl;
+use gl::types::*;
 
 use buffer::Buffer;
 use std::rc::Rc;
+use std::mem;
+use std::iter::ExactSizeIterator;
 
 macro_rules! impl_bindable_buffer_target {
     ( $Type:ty, $GLtarget:path ) => {
@@ -36,6 +39,17 @@ pub struct ArrayBufferTarget {
 impl ArrayBufferTarget {
     pub fn new() -> ArrayBufferTarget {
         ArrayBufferTarget { buffer: None }
+    }
+
+    pub fn buffer_data(&self, data: &[GLfloat], usage: GLenum) {
+        unsafe {
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (data.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
+                mem::transmute(&data[0]),
+                usage
+            );
+        }
     }
 }
 

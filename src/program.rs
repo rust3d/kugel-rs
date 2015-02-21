@@ -23,15 +23,28 @@ impl PartialEq for Program {
 }
 
 impl Program {
-    pub fn new() -> Program {
+    #[inline]
+    fn internal_new() -> Program {
         Program {
             id: unsafe { gl::CreateProgram() },
             shaders: Vec::with_capacity(2),
         }
     }
 
+    pub fn new() -> Program {
+        debug!("new");
+
+        let program = Program::internal_new();
+
+        info!("[{}]: created new", program.id);
+
+        program
+    }
+
     pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Program, ProgramError> {
-        let mut program = Program::new();
+        debug!("link new");
+
+        let mut program = Program::internal_new();
 
         for shader in shaders {
             if let Err(obj) = program.attach_shader(shader.clone()) {
@@ -43,6 +56,8 @@ impl Program {
             return Err(err);
         }
 
+        info!("[{}]: linked new", program.id, );
+
         Ok(program)
     }
 
@@ -51,48 +66,82 @@ impl Program {
     }
 
     pub fn attach_shader(&mut self, shader: Rc<Shader>) -> Result<(), AttachShaderError> {
+        debug!("[{}]: attach shader, {}", self.id, shader.get_id());
+
         unsafe { gl::AttachShader(self.id, shader.get_id()) };
 
         match unsafe { gl::GetError() } {
             gl::NO_ERROR => {
+                trace!("[{}]: attached shader {}", self.id, shader.get_id());
+
                 self.shaders.push(shader);
                 Ok(())
             },
-            _ => Err(AttachShaderError),
+            _ => {
+                error!("[{}]: attaching shader {}, {}", self.id, shader.get_id(), AttachShaderError);
+
+                Err(AttachShaderError)
+            },
         }
     }
 
     pub fn detach_shader(&mut self, shader: &Shader) -> Result<(), DetachShaderError> {
+        debug!("[{}]: detach shader, {}", self.id, shader.get_id());
+
         unsafe { gl::DetachShader(self.id, shader.get_id()) };
 
         match unsafe { gl::GetError() } {
             gl::NO_ERROR => {
+                trace!("[{}]: detached shader, {}", self.id, shader.get_id());
+
                 self.shaders.retain(|& ref el| el.deref() != shader);
                 Ok(())
             },
-            _ => Err(DetachShaderError),
+            _ => {
+                error!("[{}]: detach shader {}, {}", self.id, shader.get_id(), DetachShaderError);
+
+                Err(DetachShaderError)
+            },
         }
     }
 
     pub fn link(&mut self) -> Result<(), ProgramError> {
+        debug!("[{}]: link", self.id);
+
         unsafe { gl::LinkProgram(self.id) };
 
         match self.get_param::<GLint>(gl::LINK_STATUS) {
             Ok(link_status) => {
                 if gl::TRUE as GLint == link_status {
+                    trace!("[{}]: linked", self.id);
+
                     Ok(())
                 } else {
                     match self.get_info_log() {
-                        Ok(log) => Err(ProgramError::LinkFailed(log)),
-                        Err(err) => Err(err),
+                        Ok(log) => {
+                            error!("[{}]: link error, {}", self.id, log);
+
+                            Err(ProgramError::LinkFailed(log))
+                        },
+                        Err(err) => {
+                            error!("[{}]: link error, failed to retrieve log", self.id);
+
+                            Err(err)
+                        },
                     }
                 }
             },
-            Err(obj) => Err(ProgramError::Other(obj.to_string())),
+            Err(obj) => {
+                error!("[{}]: link error, failed to retrieve status", self.id);
+
+                Err(ProgramError::Other(obj.to_string()))
+            },
         }
     }
 
     pub fn get_info_log(&self) -> Result<String, ProgramError> {
+        trace!("[{}]: get info log", self.id);
+
         match self.get_param::<GLint>(gl::INFO_LOG_LENGTH) {
             Ok(len) => {
                 let mut buf = Vec::with_capacity(len as usize);
@@ -102,11 +151,25 @@ impl Program {
                 }
 
                 match String::from_utf8(buf) {
-                    Ok(log) => Ok(log),
-                    _ => Err(ProgramError::Other("ProgramInfoLog not valid utf8".to_string()))
+                    Ok(log) => {
+                        trace!("[{}]: got info log", self.id);
+
+                        Ok(log)
+                    },
+                    _ => {
+                        let error = ProgramError::Other("ProgramInfoLog not valid utf8".to_string());
+
+                        error!("[{}]: error getting info log, {}", self.id, error);
+
+                        Err(error)
+                    }
                 }
             },
-            Err(obj) => Err(ProgramError::Other(obj.to_string())),
+            Err(obj) => {
+                error!("[{}]: error, failed to retrieve log info length", self.id);
+
+                Err(ProgramError::Other(obj.to_string()))
+            },
         }
     }
 
@@ -114,6 +177,7 @@ impl Program {
         where
             T : ParamFromProgram
     {
+        trace!("[{}]: get param, {}", self.id, pname);
         <T as ParamFromProgram>::param_from_program(self, pname)
     }
 
@@ -124,11 +188,15 @@ impl Program {
 
 impl Drop for Program {
     fn drop(&mut self) {
+        debug!("[{}]: cleanup", self.id);
+
         for shader in self.shaders.drain() {
             unsafe { gl::DetachShader(self.id, shader.get_id()) };
         }
 
         if self.is_program() {
+            trace!("[{}]: delete", self.id);
+
             unsafe { gl::DeleteProgram(self.id) };
         }
     }

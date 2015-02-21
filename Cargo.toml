@@ -16,6 +16,7 @@ description = "Rust-oriented OpenGL wrapper."
 
 [dependencies]
 gl = "*"
+log = "*"
 
 [profile.dev]
 opt-level = 1  # Controls the --opt-level the compiler builds with

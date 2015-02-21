@@ -22,7 +22,10 @@ impl Buffer {
 
 impl Drop for Buffer {
     fn drop(&mut self) {
+        debug!("[{}]: cleanup", self.id);
+
         if self.is_buffer() {
+            debug!("[{}]: delete", self.id);
             unsafe { gl::DeleteBuffers(1, &mut self.id) };
         }
     }

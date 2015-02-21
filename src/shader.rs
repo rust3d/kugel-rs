@@ -19,20 +19,35 @@ impl PartialEq for Shader {
 }
 
 impl Shader {
-    pub fn new(ty: GLenum) -> Shader {
+    #[inline]
+    fn internal_new(ty: GLenum) -> Shader {
         Shader {
             id: unsafe { gl::CreateShader(ty) }
         }
     }
 
+    pub fn new(ty: GLenum) -> Shader {
+        debug!("new, {}", ty);
+
+        let shader = Shader::internal_new(ty);
+
+        info!("[{}]: created new", shader.id);
+
+        shader
+    }
+
     pub fn compile_new(source: &str, ty: GLenum) -> Result<Shader, ShaderError> {
-        let mut shader = Shader::new(ty);
+        debug!("compile new, {}", ty);
+
+        let mut shader = Shader::internal_new(ty);
 
         shader.set_source(source);
 
         if let Err(err) = shader.compile() {
             return Err(err);
         }
+
+        info!("[{}]: compiled new", shader.id);
 
         Ok(shader)
     }
@@ -52,29 +67,50 @@ impl Shader {
     }
 
     pub fn set_source(&mut self, source: &str) {
+        debug!("[{}]: set source", self.id);
+        trace!("[{}]: source\n{}", self.id, source);
+
         let c_str = CString::from_slice(source.as_bytes());
         unsafe { gl::ShaderSource(self.id, 1, &c_str.as_ptr(), ptr::null()); }
     }
 
     pub fn compile(&mut self) -> Result<(), ShaderError> {
+        debug!("[{}]: compile", self.id);
+
         unsafe { gl::CompileShader(self.id) };
 
         match self.get_param::<GLint>(gl::COMPILE_STATUS) {
             Ok(compile_status) => {
                 if gl::TRUE as GLint == compile_status {
+                    debug!("[{}]: compiled", self.id);
+
                     Ok(())
                 } else {
                     match self.get_info_log() {
-                        Ok(log) => Err(ShaderError::CompileFailed(log)),
-                        Err(err) => Err(err),
+                        Ok(log) => {
+                            error!("[{}]: compile error, {}", self.id, log);
+
+                            Err(ShaderError::CompileFailed(log))
+                        },
+                        Err(err) => {
+                            error!("[{}]: compile error, failed to get info log", self.id);
+
+                            Err(err)
+                        },
                     }
                 }
             },
-            Err(obj) => Err(ShaderError::Other(obj.to_string())),
+            Err(obj) => {
+                error!("[{}]: compile error, failed to get status", self.id);
+
+                Err(ShaderError::Other(obj.to_string()))
+            },
         }
     }
 
     pub fn get_info_log(&self) -> Result<String, ShaderError> {
+        trace!("[{}]: get info log", self.id);
+
         match self.get_param::<GLint>(gl::INFO_LOG_LENGTH) {
             Ok(len) => {
                 let mut buf = Vec::with_capacity(len as usize);
@@ -84,11 +120,25 @@ impl Shader {
                 }
 
                 match String::from_utf8(buf) {
-                    Ok(log) => Ok(log),
-                    _ => Err(ShaderError::Other("ShaderInfoLog not valid utf8".to_string()))
+                    Ok(log) => {
+                        trace!("[{}]: got info log", self.id);
+
+                        Ok(log)
+                    },
+                    _ => {
+                        let error = ShaderError::Other("ShaderInfoLog not valid utf8".to_string());
+
+                        error!("[{}]: error getting info log, {}", self.id, error);
+
+                        Err(error)
+                    }
                 }
             },
-            Err(obj) => Err(ShaderError::Other(obj.to_string())),
+            Err(obj) => {
+                error!("[{}]: error, failed to retrieve log info length", self.id);
+
+                Err(ShaderError::Other(obj.to_string()))
+            },
         }
     }
 
@@ -96,6 +146,7 @@ impl Shader {
         where
             T : ParamFromShader
     {
+        trace!("[{}]: get param, {}", self.id, pname);
         <T as ParamFromShader>::param_from_shader(self, pname)
     }
 
@@ -106,7 +157,11 @@ impl Shader {
 
 impl Drop for Shader {
     fn drop(&mut self) {
+        debug!("[{}]: cleanup", self.id);
+
         if self.is_shader() {
+            trace!("[{}]: delete", self.id);
+
             unsafe { gl::DeleteShader(self.id) };
         }
     }
