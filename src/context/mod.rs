@@ -1,8 +1,14 @@
-pub mod buffer_target;
+pub mod buffer;
+
+use gl;
+use gl::types::*;
+
+use std::rc::Rc;
+use super::buffer::Buffer;
 
 /// GL context root.
 pub struct Context {
-    pub buffer_targets: ContextBufferTargets,
+    pub buffers: BufferTargets,
 }
 
 impl !Send for Context {}
@@ -10,21 +16,40 @@ impl !Send for Context {}
 impl Context {
     pub fn new() -> Context {
         Context {
-            buffer_targets: ContextBufferTargets::new(),
+            buffers: BufferTargets::new(),
         }
     }
 }
 
-pub struct ContextBufferTargets {
-    pub array_buffer:           buffer_target::ArrayBufferTarget,
-    pub element_array_buffer:   buffer_target::ElementArrayBufferTarget,
+pub struct BufferTargets {
+    pub array:          buffer::ArrayBufferTarget,
+    pub element_array:  buffer::ElementArrayBufferTarget,
 }
 
-impl ContextBufferTargets {
-    pub fn new() -> ContextBufferTargets {
-        ContextBufferTargets {
-            array_buffer: buffer_target::ArrayBufferTarget::new(),
-            element_array_buffer: buffer_target::ElementArrayBufferTarget::new(),
+impl BufferTargets {
+    pub fn new() -> BufferTargets {
+        BufferTargets {
+            array:          buffer::ArrayBufferTarget::new(),
+            element_array:  buffer::ElementArrayBufferTarget::new(),
         }
+    }
+
+    pub fn gen_one(&self) -> Rc<Buffer> {
+        let mut id = 0;
+
+        unsafe { gl::GenBuffers(1, &mut id) };
+
+        Rc::new(Buffer::from_raw(id))
+    }
+
+    pub fn gen(&self, size: usize) -> Vec<Rc<Buffer>> {
+        let mut ids: Vec<GLuint> = vec![0; size];
+
+        unsafe { gl::GenBuffers(size as GLsizei, ids.as_mut_ptr()) };
+
+        ids
+            .into_iter()
+            .map(|id| Rc::new(Buffer::from_raw(id)))
+            .collect()
     }
 }
