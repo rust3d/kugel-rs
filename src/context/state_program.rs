@@ -15,7 +15,7 @@ impl StateProgram {
         }
     }
 
-    pub fn set(&mut self, program: &Rc<Program>) -> Result<&mut StateProgram, UseProgramError> {
+    pub fn using(&mut self, program: &Rc<Program>) -> Result<&mut StateProgram, UseProgramError> {
         debug!("[{}]: use", program.get_id());
 
         self.program = Some(program.clone());
@@ -23,7 +23,7 @@ impl StateProgram {
         Ok(self)
     }
 
-    pub fn unset(&mut self) {
+    pub fn unuse(&mut self) {
         if let Some(ref program) = self.program {
             debug!("[{}]: unuse", program.get_id());
 
@@ -31,6 +31,12 @@ impl StateProgram {
         }
 
         self.program = None;
+    }
+}
+
+impl Drop for StateProgram {
+    fn drop(&mut self) {
+        self.unuse();
     }
 }
 
