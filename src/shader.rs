@@ -70,7 +70,13 @@ impl Shader {
         debug!("[{}]: set source", self.id);
         trace!("[{}]: source\n{}", self.id, source);
 
-        let c_str = CString::from_slice(source.as_bytes());
+        let c_str = match CString::new(source).ok() {
+            Some(r) => r,
+            None => {
+                error!("[{}]: set source error", self.id);
+                panic!("invalid shader source");
+            }
+        };
         unsafe { gl::ShaderSource(self.id, 1, &c_str.as_ptr(), ptr::null()); }
     }
 

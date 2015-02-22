@@ -1,5 +1,4 @@
 #![feature(std_misc)]
-#![feature(core)]
 #![feature(collections)]
 #![feature(optin_builtin_traits)]
 
