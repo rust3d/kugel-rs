@@ -78,6 +78,7 @@ impl Program {
             }
         } else {
             error!("[{}]: invalid name string", self.id);
+            panic!("invalid name string");
         }
     }
 
@@ -152,6 +153,26 @@ impl Program {
 
                 Err(ProgramError::Other(obj.to_string()))
             },
+        }
+    }
+
+    pub fn get_attrib_location(&self, name: &str) -> Result<GLint, GetAttribLocationError> {
+        debug!("[{}]: get attrib location, {}", self.id, name);
+
+        match CString::new(name) {
+            Ok(cname) => {
+                match unsafe { gl::GetAttribLocation(self.id, cname.as_ptr()) } {
+                    -1 => {
+                        error!("[{}]: name {} has no attrib location", self.id, name);
+                        Err(GetAttribLocationError::Missing(name.to_string()))
+                    },
+                    location => Ok(location),
+                }
+            },
+            Err(_) => {
+                error!("[{}]: invalid name string", self.id);
+                Err(GetAttribLocationError::InvalidNameString)
+            }
         }
     }
 
@@ -269,6 +290,21 @@ pub struct DetachShaderError;
 impl fmt::Display for DetachShaderError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         "Failed to detach shader from program.".fmt(f)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum GetAttribLocationError {
+    InvalidNameString,
+    Missing(String),
+}
+
+impl fmt::Display for GetAttribLocationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &GetAttribLocationError::InvalidNameString => "Tried to get program attribute location with bad name string that could not be converted to c-string.".fmt(f),
+            &GetAttribLocationError::Missing(ref name) => write!(f, "Tried to get attribute location of {} which does not exist in program.", name),
+        }
     }
 }
 
