@@ -156,7 +156,7 @@ impl Program {
         }
     }
 
-    pub fn get_attrib_location(&self, name: &str) -> Result<GLint, GetAttribLocationError> {
+    pub fn get_attrib_location(&self, name: &str) -> Result<GLuint, GetAttribLocationError> {
         debug!("[{}]: get attrib location, {}", self.id, name);
 
         match CString::new(name) {
@@ -166,7 +166,7 @@ impl Program {
                         error!("[{}]: name {} has no attrib location", self.id, name);
                         Err(GetAttribLocationError::Missing(name.to_string()))
                     },
-                    location => Ok(location),
+                    location => Ok(location as GLuint),
                 }
             },
             Err(_) => {

@@ -2,6 +2,7 @@ use gl;
 use gl::types::*;
 
 use std::rc::Rc;
+use std::fmt;
 
 use va::VertexArray;
 
@@ -33,6 +34,34 @@ impl StateVertexArray {
         }
 
         self.va = None;
+    }
+
+    pub fn enable_attrib(&self, index: GLuint) -> Result<(), VertexNotBoundError> {
+        if let &Some(ref va) = &self.va {
+            debug!("[{}]: enable attrib, index = {}", va.get_id(), index);
+
+            unsafe { gl::EnableVertexAttribArray(index) };
+
+            Ok(())
+        } else {
+            error!("enable attrib called for unbound vertex array");
+
+            Err(VertexNotBoundError)
+        }
+    }
+
+    pub fn disable_attrib(&self, index: GLuint) -> Result<(), VertexNotBoundError> {
+        if let &Some(ref va) = &self.va {
+            debug!("[{}]: disable attrib, index = {}", va.get_id(), index);
+
+            unsafe { gl::DisableVertexAttribArray(index) };
+
+            Ok(())
+        } else {
+            error!("disable attrib called for unbound vertex array");
+
+            Err(VertexNotBoundError)
+        }
     }
 
     // --- separation of concerns?
@@ -77,4 +106,14 @@ impl Drop for StateVertexArray {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct BindVertexArrayError;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VertexNotBoundError;
+
+impl fmt::Display for VertexNotBoundError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        "No vertex array is bound.".fmt(f)
+    }
+}
