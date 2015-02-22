@@ -15,12 +15,12 @@ impl StateProgram {
         }
     }
 
-    pub fn using(&mut self, program: &Rc<Program>) -> Result<&mut StateProgram, UseProgramError> {
+    pub fn using(&mut self, program: &Rc<Program>) -> Result<(), UseProgramError> {
         debug!("[{}]: use", program.get_id());
 
         self.program = Some(program.clone());
         unsafe { gl::UseProgram(program.get_id()) };
-        Ok(self)
+        Ok(())
     }
 
     pub fn unuse(&mut self) {

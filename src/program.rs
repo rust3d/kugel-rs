@@ -1,11 +1,11 @@
 use gl;
 use gl::types::*;
 
-use std::ptr;
-
 use std::rc::Rc;
 use std::fmt;
 use std::ops::Deref;
+use std::ptr;
+use std::ffi::CString;
 
 use shader::Shader;
 
@@ -65,6 +65,22 @@ impl Program {
         self.id
     }
 
+    pub fn bind_frag_data_location(&self, color_number: GLuint, name: &str) {
+        debug!(
+            "[{}]: bind frag data location, color_number = {}, name = {}",
+            self.id,
+            color_number,
+            name
+        );
+        if let Ok(cname) = CString::new(name) {
+            unsafe {
+                gl::BindFragDataLocation(self.id, color_number, cname.as_ptr());
+            }
+        } else {
+            error!("[{}]: invalid name string", self.id);
+        }
+    }
+
     pub fn attach_shader(&mut self, shader: Rc<Shader>) -> Result<(), AttachShaderError> {
         debug!("[{}]: attach shader, {}", self.id, shader.get_id());
 
@@ -105,7 +121,7 @@ impl Program {
         }
     }
 
-    pub fn link(&mut self) -> Result<(), ProgramError> {
+    pub fn link(&self) -> Result<(), ProgramError> {
         debug!("[{}]: link", self.id);
 
         unsafe { gl::LinkProgram(self.id) };

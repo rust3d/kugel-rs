@@ -39,7 +39,7 @@ impl Shader {
     pub fn compile_new(source: &str, ty: GLenum) -> Result<Shader, ShaderError> {
         debug!("compile new, {}", ty);
 
-        let mut shader = Shader::internal_new(ty);
+        let shader = Shader::internal_new(ty);
 
         shader.set_source(source);
 
@@ -66,7 +66,7 @@ impl Shader {
         self.id
     }
 
-    pub fn set_source(&mut self, source: &str) {
+    pub fn set_source(&self, source: &str) {
         debug!("[{}]: set source", self.id);
         trace!("[{}]: source\n{}", self.id, source);
 
@@ -80,7 +80,7 @@ impl Shader {
         unsafe { gl::ShaderSource(self.id, 1, &c_str.as_ptr(), ptr::null()); }
     }
 
-    pub fn compile(&mut self) -> Result<(), ShaderError> {
+    pub fn compile(&self) -> Result<(), ShaderError> {
         debug!("[{}]: compile", self.id);
 
         unsafe { gl::CompileShader(self.id) };
