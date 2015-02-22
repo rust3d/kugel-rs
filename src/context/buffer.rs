@@ -64,3 +64,36 @@ impl ElementArrayBufferTarget {
 }
 
 pub struct BindBufferError;
+
+pub struct BufferTargets {
+    pub array:          ArrayBufferTarget,
+    pub element_array:  ElementArrayBufferTarget,
+}
+
+impl BufferTargets {
+    pub fn new() -> BufferTargets {
+        BufferTargets {
+            array:          ArrayBufferTarget::new(),
+            element_array:  ElementArrayBufferTarget::new(),
+        }
+    }
+
+    pub fn gen_one(&self) -> Rc<Buffer> {
+        let mut id = 0;
+
+        unsafe { gl::GenBuffers(1, &mut id) };
+
+        Rc::new(Buffer::from_raw(id))
+    }
+
+    pub fn gen(&self, size: usize) -> Vec<Rc<Buffer>> {
+        let mut ids: Vec<GLuint> = vec![0; size];
+
+        unsafe { gl::GenBuffers(size as GLsizei, ids.as_mut_ptr()) };
+
+        ids
+            .into_iter()
+            .map(|id| Rc::new(Buffer::from_raw(id)))
+            .collect()
+    }
+}
