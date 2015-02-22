@@ -30,7 +30,7 @@ impl StateVertexArray {
         if let Some(ref va) = self.va {
             debug!("[{}]: unbind", va.get_id());
 
-            unsafe { gl::BindVertexArray(va.get_id()) };
+            unsafe { gl::BindVertexArray(0) };
         }
 
         self.va = None;
