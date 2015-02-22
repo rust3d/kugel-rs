@@ -31,17 +31,17 @@ impl Program {
         }
     }
 
-    pub fn new() -> Program {
+    pub fn new() -> Rc<Program> {
         debug!("new");
 
         let program = Program::internal_new();
 
         info!("[{}]: created new", program.id);
 
-        program
+        Rc::new(program)
     }
 
-    pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Program, ProgramError> {
+    pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Rc<Program>, ProgramError> {
         debug!("link new");
 
         let mut program = Program::internal_new();
@@ -58,7 +58,7 @@ impl Program {
 
         info!("[{}]: linked new", program.id, );
 
-        Ok(program)
+        Ok(Rc::new(program))
     }
 
     pub fn get_id(&self) -> GLuint {

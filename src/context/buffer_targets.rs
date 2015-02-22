@@ -10,13 +10,18 @@ macro_rules! impl_bindable_buffer_target {
     ( $Type:ty, $GLtarget:path ) => {
         impl $Type {
             pub fn bind(&mut self, buffer: &Rc<Buffer>) -> Result<&mut $Type, BindBufferError> {
+                debug!("[{}]: bind", buffer.get_id());
                 self.buffer = Some(buffer.clone());
                 unsafe { gl::BindBuffer($GLtarget, buffer.get_id()) };
                 Ok(self)
             }
 
             pub fn unbind(&mut self) {
-                unsafe { gl::BindBuffer($GLtarget, 0) };
+                if let Some(ref buffer) = self.buffer {
+                    debug!("[{}]: unbind", buffer.get_id());
+                    unsafe { gl::BindBuffer($GLtarget, 0) };
+                }
+
                 self.buffer = None;
             }
         }
