@@ -1,6 +1,6 @@
-pub mod buffer;
+pub mod buffer_targets;
 
-use self::buffer::BufferTargets;
+use self::buffer_targets::BufferTargets;
 
 /// GL context root.
 pub struct Context {
