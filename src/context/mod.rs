@@ -1,9 +1,8 @@
 pub mod buffer_targets;
-pub mod state_program;
 pub mod state_va;
 
 use self::buffer_targets::BufferTargets;
-use self::state_program::StateProgram;
+use state_program::StateProgram;
 use self::state_va::StateVertexArray;
 
 /// GL context root.

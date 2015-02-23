@@ -7,6 +7,7 @@ extern crate gl;
 
 pub mod shader;
 pub mod program;
+pub mod state_program;
 pub mod buffer;
 pub mod va;
 pub mod context;

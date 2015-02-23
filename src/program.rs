@@ -31,17 +31,17 @@ impl Program {
         }
     }
 
-    pub fn new() -> Rc<Program> {
+    pub fn new() -> Program {
         debug!("new");
 
         let program = Program::internal_new();
 
         info!("[{}]: created new", program.id);
 
-        Rc::new(program)
+        program
     }
 
-    pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Rc<Program>, ProgramError> {
+    pub fn link_new(shaders: &[Rc<Shader>]) -> Result<Program, ProgramError> {
         debug!("link new");
 
         let mut program = Program::internal_new();
@@ -58,14 +58,14 @@ impl Program {
 
         info!("[{}]: linked new", program.id, );
 
-        Ok(Rc::new(program))
+        Ok(program)
     }
 
     pub fn get_id(&self) -> GLuint {
         self.id
     }
 
-    pub fn bind_frag_data_location(&self, color_number: GLuint, name: &str) {
+    pub fn bind_frag_data_location(&mut self, color_number: GLuint, name: &str) {
         debug!(
             "[{}]: bind frag data location, color_number = {}, name = {}",
             self.id,
@@ -122,7 +122,7 @@ impl Program {
         }
     }
 
-    pub fn link(&self) -> Result<(), ProgramError> {
+    pub fn link(&mut self) -> Result<(), ProgramError> {
         debug!("[{}]: link", self.id);
 
         unsafe { gl::LinkProgram(self.id) };
