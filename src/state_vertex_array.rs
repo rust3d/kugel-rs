@@ -6,24 +6,73 @@ use std::fmt;
 
 use vertex_array::VertexArray;
 
-pub struct StateVertexArray {
+pub struct ContextVertexArray {
+    state: VertexArrayState,
+}
+
+impl ContextVertexArray {
+    pub fn new() -> ContextVertexArray {
+        ContextVertexArray {
+            state: VertexArrayState::new()
+        }
+    }
+
+    pub fn gen_one(&self) -> Rc<VertexArray> {
+        debug!("gen, size = one");
+
+        let mut id = 0;
+
+        unsafe { gl::GenVertexArrays(1, &mut id) };
+
+        debug!("[{}]: generated", id);
+
+        Rc::new(VertexArray::from_raw(id))
+    }
+
+    pub fn gen(&self, size: usize) -> Vec<Rc<VertexArray>> {
+        debug!("gen, size = {}", size);
+
+        let mut ids: Vec<GLuint> = vec![0; size];
+
+        unsafe { gl::GenVertexArrays(size as GLsizei, ids.as_mut_ptr()) };
+
+        debug!(
+            "[{}]: generated",
+            ids.iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<String>>()
+                .connect(", ")
+        );
+
+        ids
+            .into_iter()
+            .map(|id| Rc::new(VertexArray::from_raw(id)))
+            .collect()
+    }
+
+    pub fn bind(&mut self, vertex_array: &Rc<VertexArray>) -> &mut VertexArrayState {
+        self.state.bind(vertex_array)
+    }
+}
+
+pub struct VertexArrayState {
     va: Option<Rc<VertexArray>>,
 }
 
-impl StateVertexArray {
-    pub fn new() -> StateVertexArray {
-        StateVertexArray {
+impl VertexArrayState {
+    pub fn new() -> VertexArrayState {
+        VertexArrayState {
             va: None
         }
     }
 
-    pub fn bind(&mut self, vertex_array: &Rc<VertexArray>) -> Result<&mut StateVertexArray, BindVertexArrayError> {
+    pub fn bind(&mut self, vertex_array: &Rc<VertexArray>) -> &mut VertexArrayState {
         debug!("[{}]: bind", vertex_array.get_id());
 
         self.va = Some(vertex_array.clone());
         unsafe { gl::BindVertexArray(vertex_array.get_id()) };
 
-        Ok(self)
+        self
     }
 
     pub fn unbind(&mut self) {
@@ -63,51 +112,13 @@ impl StateVertexArray {
             Err(VertexNotBoundError)
         }
     }
-
-    // --- separation of concerns?
-
-    pub fn gen_one(&self) -> Rc<VertexArray> {
-        debug!("gen, size = one");
-
-        let mut id = 0;
-
-        unsafe { gl::GenVertexArrays(1, &mut id) };
-
-        debug!("[{}]: generated", id);
-
-        Rc::new(VertexArray::from_raw(id))
-    }
-
-    pub fn gen(&self, size: usize) -> Vec<Rc<VertexArray>> {
-        debug!("gen, size = {}", size);
-
-        let mut ids: Vec<GLuint> = vec![0; size];
-
-        unsafe { gl::GenVertexArrays(size as GLsizei, ids.as_mut_ptr()) };
-
-        debug!(
-            "[{}]: generated",
-            ids.iter()
-                .map(|id| id.to_string())
-                .collect::<Vec<String>>()
-                .connect(", ")
-        );
-
-        ids
-            .into_iter()
-            .map(|id| Rc::new(VertexArray::from_raw(id)))
-            .collect()
-    }
 }
 
-impl Drop for StateVertexArray {
+impl Drop for VertexArrayState {
     fn drop(&mut self) {
         self.unbind();
     }
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct BindVertexArrayError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct VertexNotBoundError;
