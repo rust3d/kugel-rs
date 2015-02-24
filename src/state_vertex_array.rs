@@ -45,7 +45,7 @@ impl ContextVertexArray {
             .collect()
     }
 
-    pub fn bind<'a>(&'a mut self, vertex_array: &'a mut VertexArray) -> BoundVertexArray {
+    pub fn with_bind<'a>(&'a mut self, vertex_array: &'a mut VertexArray) -> BoundVertexArray {
         BoundVertexArray::new(self, vertex_array)
     }
 }
