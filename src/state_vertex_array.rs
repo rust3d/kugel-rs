@@ -1,23 +1,18 @@
 use gl;
 use gl::types::*;
 
-use std::rc::Rc;
 use std::fmt;
 
 use vertex_array::VertexArray;
 
-pub struct ContextVertexArray {
-    state: VertexArrayState,
-}
+pub struct ContextVertexArray;
 
 impl ContextVertexArray {
     pub fn new() -> ContextVertexArray {
-        ContextVertexArray {
-            state: VertexArrayState::new()
-        }
+        ContextVertexArray
     }
 
-    pub fn gen_one(&self) -> Rc<VertexArray> {
+    pub fn gen_one(&self) -> VertexArray {
         debug!("gen, size = one");
 
         let mut id = 0;
@@ -26,10 +21,10 @@ impl ContextVertexArray {
 
         debug!("[{}]: generated", id);
 
-        Rc::new(VertexArray::from_raw(id))
+        VertexArray::from_raw(id)
     }
 
-    pub fn gen(&self, size: usize) -> Vec<Rc<VertexArray>> {
+    pub fn gen(&self, size: usize) -> Vec<VertexArray> {
         debug!("gen, size = {}", size);
 
         let mut ids: Vec<GLuint> = vec![0; size];
@@ -46,85 +41,53 @@ impl ContextVertexArray {
 
         ids
             .into_iter()
-            .map(|id| Rc::new(VertexArray::from_raw(id)))
+            .map(|id| VertexArray::from_raw(id))
             .collect()
     }
 
-    pub fn bind(&mut self, vertex_array: &Rc<VertexArray>) -> &mut VertexArrayState {
-        self.state.bind(vertex_array)
+    pub fn bind<'a>(&'a mut self, vertex_array: &'a mut VertexArray) -> BoundVertexArray {
+        BoundVertexArray::new(self, vertex_array)
     }
 }
 
-pub struct VertexArrayState {
-    va: Option<Rc<VertexArray>>,
+pub struct BoundVertexArray<'a> {
+    cva: &'a mut ContextVertexArray,
+    va: &'a mut VertexArray,
 }
 
-impl VertexArrayState {
-    pub fn new() -> VertexArrayState {
-        VertexArrayState {
-            va: None
-        }
+impl<'a> BoundVertexArray<'a> {
+    pub fn new(context_va: &'a mut ContextVertexArray, vertex_array: &'a mut VertexArray) -> BoundVertexArray<'a> {
+        let mut fresh = BoundVertexArray::<'a> {
+            cva: context_va,
+            va: vertex_array,
+        };
+
+        fresh.bind();
+        fresh
     }
 
-    pub fn bind(&mut self, vertex_array: &Rc<VertexArray>) -> &mut VertexArrayState {
-        debug!("[{}]: bind", vertex_array.get_id());
+    fn bind(&mut self) {
+        let new_id = self.va.get_id();
 
-        self.va = Some(vertex_array.clone());
-        unsafe { gl::BindVertexArray(vertex_array.get_id()) };
-
-        self
+        debug!("[{}]: bind", new_id);
+        unsafe { gl::BindVertexArray(new_id) };
     }
 
-    pub fn unbind(&mut self) {
-        if let Some(ref va) = self.va {
-            debug!("[{}]: unbind", va.get_id());
-
-            unsafe { gl::BindVertexArray(0) };
-        }
-
-        self.va = None;
+    pub fn enable_attrib(&mut self, index: GLuint) {
+        debug!("[{}]: enable attrib, index = {}", self.va.get_id(), index);
+        unsafe { gl::EnableVertexAttribArray(index) };
     }
 
-    pub fn enable_attrib(&self, index: GLuint) -> Result<(), VertexNotBoundError> {
-        if let &Some(ref va) = &self.va {
-            debug!("[{}]: enable attrib, index = {}", va.get_id(), index);
-
-            unsafe { gl::EnableVertexAttribArray(index) };
-
-            Ok(())
-        } else {
-            error!("enable attrib called for unbound vertex array");
-
-            Err(VertexNotBoundError)
-        }
-    }
-
-    pub fn disable_attrib(&self, index: GLuint) -> Result<(), VertexNotBoundError> {
-        if let &Some(ref va) = &self.va {
-            debug!("[{}]: disable attrib, index = {}", va.get_id(), index);
-
-            unsafe { gl::DisableVertexAttribArray(index) };
-
-            Ok(())
-        } else {
-            error!("disable attrib called for unbound vertex array");
-
-            Err(VertexNotBoundError)
-        }
+    pub fn disable_attrib(&self, index: GLuint) {
+        debug!("[{}]: disable attrib, index = {}", self.va.get_id(), index);
+        unsafe { gl::DisableVertexAttribArray(index) };
     }
 }
 
-impl Drop for VertexArrayState {
+#[unsafe_destructor]
+impl<'a> Drop for BoundVertexArray<'a> {
     fn drop(&mut self) {
-        self.unbind();
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct VertexNotBoundError;
-
-impl fmt::Display for VertexNotBoundError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        "No vertex array is bound.".fmt(f)
+        debug!("[{}]: unbind", self.va.get_id());
+        unsafe { gl::BindVertexArray(0) };
     }
 }
