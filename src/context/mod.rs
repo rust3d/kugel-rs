@@ -1,6 +1,4 @@
-pub mod buffer_targets;
-
-use self::buffer_targets::BufferTargets;
+use state_buffer::BufferTargets;
 use state_program::StateProgram;
 use state_vertex_array::StateVertexArray;
 

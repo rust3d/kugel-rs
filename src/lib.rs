@@ -6,9 +6,12 @@ extern crate gl;
 #[macro_use] extern crate log;
 
 pub mod shader;
+pub mod context;
+
 pub mod program;
-pub mod state_program;
 pub mod buffer;
 pub mod vertex_array;
+
+pub mod state_program;
+pub mod state_buffer;
 pub mod state_vertex_array;
-pub mod context;
