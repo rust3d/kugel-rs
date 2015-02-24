@@ -9,5 +9,6 @@ pub mod shader;
 pub mod program;
 pub mod state_program;
 pub mod buffer;
-pub mod va;
+pub mod vertex_array;
+pub mod state_vertex_array;
 pub mod context;

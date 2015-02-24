@@ -4,7 +4,7 @@ use gl::types::*;
 use std::rc::Rc;
 use std::fmt;
 
-use va::VertexArray;
+use vertex_array::VertexArray;
 
 pub struct StateVertexArray {
     va: Option<Rc<VertexArray>>,
