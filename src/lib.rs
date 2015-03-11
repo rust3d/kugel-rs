@@ -1,4 +1,3 @@
-#![feature(std_misc)]
 #![feature(collections)]
 #![feature(optin_builtin_traits)]
 #![feature(unsafe_destructor)]
@@ -15,4 +14,3 @@ pub mod vertex_array;
 
 pub mod state_program;
 pub mod state_buffer;
-pub mod state_vertex_array;
