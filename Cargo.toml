@@ -18,6 +18,10 @@ description = "Rust-oriented OpenGL wrapper."
 gl = "*"
 log = "*"
 
+[dev-dependencies]
+sdl2 = "*"
+env_logger = "*"
+
 [profile.dev]
 opt-level = 1  # Controls the --opt-level the compiler builds with
 debug = true   # Controls whether the compiler passes -g or `--cfg ndebug`

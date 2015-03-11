@@ -1,26 +1,17 @@
 use gl;
 use gl::types::*;
 use std::mem;
+use std::rc::Rc;
 
 /// Generates, binds and unbinds vertex array objects.
 pub struct VertexArrayState {
-    is_bound: bool,
-}
-
-/// Manipulates OpenGL vertex array object.
-pub struct VertexArray {
-    id: GLuint,
-}
-
-/// Manipulates OpenGL vertex array object when it is bound.
-pub struct VertexArrayBound {
-    va: VertexArray,
+    bound_va: Option<VertexArray>,
 }
 
 impl VertexArrayState {
     pub fn new() -> VertexArrayState {
         VertexArrayState {
-            is_bound: false,
+            bound_va: None,
         }
     }
 
@@ -53,7 +44,7 @@ impl VertexArrayState {
 
         ids
             .into_iter()
-            .map(|id| VertexArray::from_raw(id))
+            .map(|id| VertexArray::from_raw(id) )
             .collect()
     }
 
@@ -64,17 +55,23 @@ impl VertexArrayState {
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn bind(&mut self, vertex_array: VertexArray) -> VertexArrayBound {
-        match self.is_bound {
-            false => {
-                self.is_bound = true;
-                VertexArrayBound::new(vertex_array)
-            },
-            true => {
-                error!("[{}]: unreleased bind", vertex_array.get_id());
+    pub fn bind(&mut self, vertex_array: &VertexArray) -> VertexArrayBound {
+        match self.bound_va {
+            None => (),
+            Some(ref old) => {
+                error!("[{}]: can not bind {} when already bound", old.get_id(), vertex_array.get_id());
                 panic!("Can not bind multiple VertexArray objects to OpenGL state.");
             }
-        }
+        };
+
+        self.bound_va = Some(vertex_array.clone());
+
+        let mut bound = VertexArrayBound {
+            va: None,
+        };
+
+        bound.bind(vertex_array.clone());
+        bound
     }
 
     /// Unbind vertex array and return unbound object variant.
@@ -84,138 +81,18 @@ impl VertexArrayState {
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn unbind(&mut self, bound: VertexArrayBound) -> VertexArray {
-        debug!("[{}]: unbind", bound.va.get_id());
-        unsafe { gl::BindVertexArray(0) };
+    pub fn unbind(&mut self, mut bound: VertexArrayBound) {
+        bound.unbind();
 
-        self.is_bound = false;
-
-        bound.va
+        self.bound_va = None;
     }
 }
 
-impl VertexArray {
-    /// Create from raw name.
-    pub fn from_raw(id: GLuint) -> VertexArray {
-        VertexArray { id: id }
-    }
-
-    /// Get raw name.
-    pub fn get_id(&self) -> GLuint {
-        self.id
-    }
-
-    /// Enable a generic vertex attribute array.
-    ///
-    /// Specifies the `index` of the generic vertex attribute to be enabled.
-    ///
-    /// ## glEnableVertexArrayAttrib
-    ///
-    /// Better alternative for `VertexArrayBound::enable_attrib`.
-    ///
-    /// - OpenGL Version 4.5
-    ///
-    pub fn enable_attrib(&self, index: GLuint) {
-        debug!("[{}]: enable attrib, index = {}", self.id, index);
-        unsafe { gl::EnableVertexArrayAttrib(self.id, index) };
-    }
-
-    /// Disable a generic vertex attribute array.
-    ///
-    /// Specifies the `index` of the generic vertex attribute to be disabled.
-    ///
-    /// ## glDisableVertexArrayAttrib
-    ///
-    /// Better alternative for `VertexArrayBound::disable_attrib`.
-    ///
-    /// - OpenGL Version 4.5
-    ///
-    pub fn disable_attrib(&self, index: GLuint) {
-        debug!("[{}]: disable attrib, index = {}", self.id, index);
-        unsafe { gl::DisableVertexArrayAttrib(self.id, index) };
-    }
-
-    /// Determine if a name corresponds to a vertex array object.
-    ///
-    /// Returns true if contains correct vertex array object and it
-    /// was bound at least once.
-    ///
-    /// ## glIsVertexArray
-    ///
-    /// - OpenGL Version 3.0
-    /// - OpenGL ES Version 3.0
-    ///
-    pub fn is_vertex_array(&self) -> bool {
-        unsafe { gl::IsVertexArray(self.id) == gl::TRUE }
-    }
+struct VertexArrayRaw {
+    id: GLuint,
 }
 
-impl VertexArrayBound {
-    fn new(vertex_array: VertexArray) -> VertexArrayBound {
-        let mut fresh = VertexArrayBound {
-            va: vertex_array,
-        };
-
-        fresh.bind();
-        fresh
-    }
-
-    fn bind(&mut self) {
-        let new_id = self.va.get_id();
-
-        debug!("[{}]: bind", new_id);
-        unsafe { gl::BindVertexArray(new_id) };
-    }
-
-    /// Bind other `vertex_array` and return currently bound array.
-    ///
-    /// ## glBindVertexArray
-    ///
-    /// - OpenGL Version 3.0
-    /// - OpenGL ES Version 3.0
-    ///
-    pub fn bind_other(&mut self, mut vertex_array: VertexArray) -> VertexArray {
-        mem::swap(&mut self.va, &mut vertex_array);
-
-        self.bind();
-
-        vertex_array
-    }
-
-    /// Enable a generic vertex attribute array.
-    ///
-    /// Specifies the `index` of the generic vertex attribute to be enabled.
-    ///
-    /// ## glEnableVertexAttribArray
-    ///
-    /// Worse alternative for `VertexArray::enable_attrib`.
-    ///
-    /// - OpenGL Version 2.0
-    /// - OpenGL ES Version 2.0
-    ///
-    pub fn enable_attrib(&mut self, index: GLuint) {
-        debug!("[{}]: enable attrib, index = {}", self.va.get_id(), index);
-        unsafe { gl::EnableVertexAttribArray(index) };
-    }
-
-    /// Disable a generic vertex attribute array.
-    ///
-    /// Specifies the `index` of the generic vertex attribute to be disabled.
-    ///
-    /// ## glDisableVertexAttribArray
-    ///
-    /// Worse alternative for `VertexArray::disable_attrib`.
-    ///
-    /// - OpenGL Version 2.0
-    /// - OpenGL ES Version 2.0
-    ///
-    pub fn disable_attrib(&self, index: GLuint) {
-        debug!("[{}]: disable attrib, index = {}", self.va.get_id(), index);
-        unsafe { gl::DisableVertexAttribArray(index) };
-    }
-}
-
-impl Drop for VertexArray {
+impl Drop for VertexArrayRaw {
 
     /// Delete vertex array objects.
     ///
@@ -230,7 +107,148 @@ impl Drop for VertexArray {
     }
 }
 
-impl Drop for VertexArrayState {
+/// Manipulates OpenGL vertex array object.
+#[derive(Clone)]
+pub struct VertexArray {
+    raw: Rc<VertexArrayRaw>,
+}
+
+impl VertexArray {
+
+    /// Create from raw name.
+    pub fn from_raw(id: GLuint) -> VertexArray {
+        VertexArray { raw: Rc::new(VertexArrayRaw { id: id }) }
+    }
+
+    /// Get raw name.
+    pub fn get_id(&self) -> GLuint {
+        self.raw.id
+    }
+
+    /// Enable a generic vertex attribute array.
+    ///
+    /// Specifies the `index` of the generic vertex attribute to be enabled.
+    ///
+    /// ## glEnableVertexArrayAttrib
+    ///
+    /// Better alternative for `VertexArrayBound::enable_attrib`.
+    ///
+    /// - OpenGL Version 4.5
+    ///
+    pub fn enable_attrib(&self, index: GLuint) {
+        debug!("[{}]: enable attrib, index = {}", self.get_id(), index);
+        unsafe { gl::EnableVertexArrayAttrib(self.get_id(), index) };
+    }
+
+    /// Disable a generic vertex attribute array.
+    ///
+    /// Specifies the `index` of the generic vertex attribute to be disabled.
+    ///
+    /// ## glDisableVertexArrayAttrib
+    ///
+    /// Better alternative for `VertexArrayBound::disable_attrib`.
+    ///
+    /// - OpenGL Version 4.5
+    ///
+    pub fn disable_attrib(&self, index: GLuint) {
+        debug!("[{}]: disable attrib, index = {}", self.get_id(), index);
+        unsafe { gl::DisableVertexArrayAttrib(self.get_id(), index) };
+    }
+
+    /// Determine if a name corresponds to a vertex array object.
+    ///
+    /// Returns true if contains correct vertex array object and it
+    /// was bound at least once.
+    ///
+    /// ## glIsVertexArray
+    ///
+    /// - OpenGL Version 3.0
+    /// - OpenGL ES Version 3.0
+    ///
+    pub fn is_vertex_array(&self) -> bool {
+        unsafe { gl::IsVertexArray(self.get_id()) == gl::TRUE }
+    }
+}
+
+/// Manipulates OpenGL vertex array object when it is bound.
+pub struct VertexArrayBound {
+    /// Optional because can be unbound.
+    va: Option<VertexArray>,
+}
+
+impl VertexArrayBound {
+    fn bind(&mut self, va: VertexArray) {
+        let new_id = va.get_id();
+
+        self.va = Some(va);
+
+        debug!("[{}]: bind", new_id);
+        unsafe { gl::BindVertexArray(new_id) };
+    }
+
+    fn unbind(&mut self) {
+        if let Some(ref va) = self.va {
+            debug!("[{}]: unbind", va.get_id());
+
+            unsafe { gl::BindVertexArray(0) };
+        }
+
+        self.va = None;
+    }
+
+    /// Bind other `vertex_array` and return currently bound array.
+    ///
+    /// ## glBindVertexArray
+    ///
+    /// - OpenGL Version 3.0
+    /// - OpenGL ES Version 3.0
+    ///
+    // pub fn bind_other(&mut self, mut vertex_array: VertexArray) -> VertexArray {
+    //     mem::swap(&mut self.va, &mut vertex_array);
+    //
+    //     self.bind();
+    //
+    //     vertex_array
+    // }
+
+    /// Enable a generic vertex attribute array.
+    ///
+    /// Specifies the `index` of the generic vertex attribute to be enabled.
+    ///
+    /// ## glEnableVertexAttribArray
+    ///
+    /// Worse alternative for `VertexArray::enable_attrib`.
+    ///
+    /// - OpenGL Version 2.0
+    /// - OpenGL ES Version 2.0
+    ///
+    pub fn enable_attrib(&mut self, index: GLuint) {
+        if let Some(ref va) = self.va {
+            debug!("[{}]: enable attrib, index = {}", va.get_id(), index);
+            unsafe { gl::EnableVertexAttribArray(index) };
+        }
+    }
+
+    /// Disable a generic vertex attribute array.
+    ///
+    /// Specifies the `index` of the generic vertex attribute to be disabled.
+    ///
+    /// ## glDisableVertexAttribArray
+    ///
+    /// Worse alternative for `VertexArray::disable_attrib`.
+    ///
+    /// - OpenGL Version 2.0
+    /// - OpenGL ES Version 2.0
+    ///
+    pub fn disable_attrib(&self, index: GLuint) {
+        if let Some(ref va) = self.va {
+            debug!("[{}]: disable attrib, index = {}", va.get_id(), index);
+            unsafe { gl::DisableVertexAttribArray(index) };
+        }
+    }
+}
+
+impl Drop for VertexArrayBound {
 
     /// Cleanup state and unbind vertex array object if it is still bound.
     ///
@@ -240,9 +258,6 @@ impl Drop for VertexArrayState {
     /// - OpenGL ES Version 3.0
     ///
     fn drop(&mut self) {
-        if self.is_bound {
-            debug!("[?]: unbind last");
-            unsafe { gl::BindVertexArray(0) };
-        }
+        self.unbind();
     }
 }
