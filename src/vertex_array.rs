@@ -57,14 +57,14 @@ impl VertexArrayState {
             .collect()
     }
 
-    /// Create new vertex array object bound and bind specified `vertex_array`.
+    /// Bind vertex array object and return bound object variant.
     ///
     /// ## glBindVertexArray
     ///
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn take_bound(&mut self, vertex_array: VertexArray) -> VertexArrayBound {
+    pub fn bind(&mut self, vertex_array: VertexArray) -> VertexArrayBound {
         match self.is_bound {
             false => {
                 self.is_bound = true;
@@ -77,14 +77,14 @@ impl VertexArrayState {
         }
     }
 
-    /// Unbind vertex array object and return it.
+    /// Unbind vertex array and return unbound object variant.
     ///
     /// ## glBindVertexArray(0)
     ///
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn end_bound(&mut self, bound: VertexArrayBound) -> VertexArray {
+    pub fn unbind(&mut self, bound: VertexArrayBound) -> VertexArray {
         debug!("[{}]: unbind", bound.va.get_id());
         unsafe { gl::BindVertexArray(0) };
 
@@ -167,14 +167,14 @@ impl VertexArrayBound {
         unsafe { gl::BindVertexArray(new_id) };
     }
 
-    /// Bind another `vertex_array` and return currently bound array.
+    /// Bind other `vertex_array` and return currently bound array.
     ///
     /// ## glBindVertexArray
     ///
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn replace(&mut self, mut vertex_array: VertexArray) -> VertexArray {
+    pub fn bind_other(&mut self, mut vertex_array: VertexArray) -> VertexArray {
         mem::swap(&mut self.va, &mut vertex_array);
 
         self.bind();
