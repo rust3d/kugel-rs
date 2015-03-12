@@ -65,12 +65,7 @@ impl VertexArrayState {
 
         self.bound_va = Some(vertex_array.clone());
 
-        let mut bound = VertexArrayBound {
-            va: None,
-        };
-
-        bound.bind(vertex_array.clone());
-        bound
+        VertexArrayBound::new(vertex_array.clone())
     }
 
     /// Unbind vertex array and return unbound object variant.
@@ -80,9 +75,7 @@ impl VertexArrayState {
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn unbind(&mut self, mut bound: VertexArrayBound) {
-        bound.unbind();
-
+    pub fn unbind(&mut self, _bound: VertexArrayBound) {
         self.bound_va = None;
     }
 }
@@ -171,44 +164,27 @@ impl VertexArray {
 
 /// Manipulates OpenGL vertex array object when it is bound.
 pub struct VertexArrayBound {
-    /// Optional because can be unbound.
-    va: Option<VertexArray>,
+    va: VertexArray,
 }
 
 impl VertexArrayBound {
-    fn bind(&mut self, va: VertexArray) {
-        let new_id = va.get_id();
+    fn new(va: VertexArray) -> VertexArrayBound {
+        let binding = VertexArrayBound {
+            va : va
+        };
 
-        self.va = Some(va);
+        let new_id = binding.va.get_id();
 
         debug!("[{}]: bind", new_id);
         unsafe { gl::BindVertexArray(new_id) };
+
+        binding
     }
 
     fn unbind(&mut self) {
-        if let Some(ref va) = self.va {
-            debug!("[{}]: unbind", va.get_id());
-
-            unsafe { gl::BindVertexArray(0) };
-        }
-
-        self.va = None;
+        debug!("[{}]: unbind", self.va.get_id());
+        unsafe { gl::BindVertexArray(0) };
     }
-
-    /// Bind other `vertex_array` and return currently bound array.
-    ///
-    /// ## glBindVertexArray
-    ///
-    /// - OpenGL Version 3.0
-    /// - OpenGL ES Version 3.0
-    ///
-    // pub fn bind_other(&mut self, mut vertex_array: VertexArray) -> VertexArray {
-    //     mem::swap(&mut self.va, &mut vertex_array);
-    //
-    //     self.bind();
-    //
-    //     vertex_array
-    // }
 
     /// Enable a generic vertex attribute array.
     ///
@@ -222,10 +198,8 @@ impl VertexArrayBound {
     /// - OpenGL ES Version 2.0
     ///
     pub fn enable_attrib(&mut self, index: GLuint) {
-        if let Some(ref va) = self.va {
-            debug!("[{}]: enable attrib, index = {}", va.get_id(), index);
-            unsafe { gl::EnableVertexAttribArray(index) };
-        }
+        debug!("[{}]: enable attrib, index = {}", self.va.get_id(), index);
+        unsafe { gl::EnableVertexAttribArray(index) };
     }
 
     /// Disable a generic vertex attribute array.
@@ -240,10 +214,8 @@ impl VertexArrayBound {
     /// - OpenGL ES Version 2.0
     ///
     pub fn disable_attrib(&self, index: GLuint) {
-        if let Some(ref va) = self.va {
-            debug!("[{}]: disable attrib, index = {}", va.get_id(), index);
-            unsafe { gl::DisableVertexAttribArray(index) };
-        }
+        debug!("[{}]: disable attrib, index = {}", self.va.get_id(), index);
+        unsafe { gl::DisableVertexAttribArray(index) };
     }
 }
 
