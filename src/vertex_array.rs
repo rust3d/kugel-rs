@@ -1,6 +1,5 @@
 use gl;
 use gl::types::*;
-use std::mem;
 use std::rc::Rc;
 
 /// Generates, binds and unbinds vertex array objects.

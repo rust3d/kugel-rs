@@ -17,16 +17,10 @@ pub struct WindowOptions {
     pub initial_size: (i32, i32),
 }
 
-enum WindowState {
-    Started,
-    Running,
-    Closed,
-}
-
 pub struct Window {
     sdl_context: self::sdl2::sdl::Sdl,
     sdl_window: self::sdl2::video::Window,
-    sdl_gl_context: self::sdl2::video::GLContext,
+    _sdl_gl_context: self::sdl2::video::GLContext,
     pub size: (i32, i32),
 }
 
@@ -75,7 +69,7 @@ impl Window {
         Window {
             sdl_context: sdl_context,
             sdl_window: window,
-            sdl_gl_context: gl_context,
+            _sdl_gl_context: gl_context,
             size: options.initial_size,
         }
     }

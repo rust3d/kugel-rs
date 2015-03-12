@@ -44,7 +44,7 @@ fn main() {
         Err(e) => panic!("{}", e),
     };
 
-    let mut vao = cx.vertex_array.gen_one();
+    let vao = cx.vertex_array.gen_one();
     let vbo = cx.buffers.gen_one();
 
     program.bind_frag_data_location(0, "out_color");
