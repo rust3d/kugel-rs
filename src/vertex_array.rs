@@ -4,13 +4,13 @@ use std::rc::Rc;
 
 /// Generates, binds and unbinds vertex array objects.
 pub struct VertexArrayState {
-    bound_va: Option<VertexArray>,
+    binding: Option<VertexArray>,
 }
 
 impl VertexArrayState {
     pub fn new() -> VertexArrayState {
         VertexArrayState {
-            bound_va: None,
+            binding: None,
         }
     }
 
@@ -54,8 +54,8 @@ impl VertexArrayState {
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn bind(&mut self, vertex_array: &VertexArray) -> VertexArrayBound {
-        match self.bound_va {
+    pub fn bind(&mut self, vertex_array: &VertexArray) -> VertexArrayBinding {
+        match self.binding {
             None => (),
             Some(ref old) => {
                 error!("[{}]: can not bind {} when already bound", old.get_id(), vertex_array.get_id());
@@ -63,9 +63,9 @@ impl VertexArrayState {
             }
         };
 
-        self.bound_va = Some(vertex_array.clone());
+        self.binding = Some(vertex_array.clone());
 
-        VertexArrayBound::new(vertex_array.clone())
+        VertexArrayBinding::new(vertex_array.clone())
     }
 
     /// Unbind vertex array and return unbound object variant.
@@ -75,8 +75,8 @@ impl VertexArrayState {
     /// - OpenGL Version 3.0
     /// - OpenGL ES Version 3.0
     ///
-    pub fn unbind(&mut self, _bound: VertexArrayBound) {
-        self.bound_va = None;
+    pub fn unbind(&mut self, _binding: VertexArrayBinding) {
+        self.binding = None;
     }
 }
 
@@ -123,7 +123,7 @@ impl VertexArray {
     ///
     /// ## glEnableVertexArrayAttrib
     ///
-    /// Better alternative for `VertexArrayBound::enable_attrib`.
+    /// Better alternative for `VertexArrayBinding::enable_attrib`.
     ///
     /// - OpenGL Version 4.5
     ///
@@ -138,7 +138,7 @@ impl VertexArray {
     ///
     /// ## glDisableVertexArrayAttrib
     ///
-    /// Better alternative for `VertexArrayBound::disable_attrib`.
+    /// Better alternative for `VertexArrayBinding::disable_attrib`.
     ///
     /// - OpenGL Version 4.5
     ///
@@ -163,13 +163,13 @@ impl VertexArray {
 }
 
 /// Manipulates OpenGL vertex array object when it is bound.
-pub struct VertexArrayBound {
+pub struct VertexArrayBinding {
     va: VertexArray,
 }
 
-impl VertexArrayBound {
-    fn new(va: VertexArray) -> VertexArrayBound {
-        let binding = VertexArrayBound {
+impl VertexArrayBinding {
+    fn new(va: VertexArray) -> VertexArrayBinding {
+        let binding = VertexArrayBinding {
             va : va
         };
 
@@ -219,7 +219,7 @@ impl VertexArrayBound {
     }
 }
 
-impl Drop for VertexArrayBound {
+impl Drop for VertexArrayBinding {
 
     /// Cleanup state and unbind vertex array object if it is still bound.
     ///
