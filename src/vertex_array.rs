@@ -2,6 +2,26 @@ use gl;
 use gl::types::*;
 use std::rc::Rc;
 
+/// Raw vertex array object wrapper to hide RAII mechanism.
+struct VertexArrayRaw {
+    id: GLuint,
+}
+
+impl Drop for VertexArrayRaw {
+
+    /// Delete vertex array objects.
+    ///
+    /// ## glDeleteVertexArrays
+    ///
+    /// - OpenGL Version 3.0
+    /// - OpenGL ES Version 3.0
+    ///
+    fn drop(&mut self) {
+        debug!("[{}]: cleanup && delete", self.id);
+        unsafe { gl::DeleteVertexArrays(1, &mut self.id) };
+    }
+}
+
 /// Generates, binds and unbinds vertex array objects.
 pub struct VertexArrayState {
     binding: Option<VertexArray>,
@@ -77,25 +97,6 @@ impl VertexArrayState {
     ///
     pub fn unbind(&mut self, _binding: VertexArrayBinding) {
         self.binding = None;
-    }
-}
-
-struct VertexArrayRaw {
-    id: GLuint,
-}
-
-impl Drop for VertexArrayRaw {
-
-    /// Delete vertex array objects.
-    ///
-    /// ## glDeleteVertexArrays
-    ///
-    /// - OpenGL Version 3.0
-    /// - OpenGL ES Version 3.0
-    ///
-    fn drop(&mut self) {
-        debug!("[{}]: cleanup && delete", self.id);
-        unsafe { gl::DeleteVertexArrays(1, &mut self.id) };
     }
 }
 
