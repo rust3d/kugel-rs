@@ -2,7 +2,9 @@
 
 name = "kugel"
 version = "0.0.2"
-authors = ["Nerijus Arlauskas <nercury@gmail.com>"]
+authors = [
+    "Nerijus Arlauskas <nercury@gmail.com>"
+]
 
 repository = "https://github.com/Nercury/kugel-rs"
 
