@@ -3,11 +3,11 @@ use gl::types::*;
 use std::rc::Rc;
 
 /// Raw vertex array object wrapper to hide RAII mechanism.
-struct VertexArrayRaw {
+struct Raw {
     id: GLuint,
 }
 
-impl Drop for VertexArrayRaw {
+impl Drop for Raw {
 
     /// Delete vertex array objects.
     ///
@@ -103,14 +103,14 @@ impl VertexArrayState {
 /// Manipulates OpenGL vertex array object.
 #[derive(Clone)]
 pub struct VertexArray {
-    raw: Rc<VertexArrayRaw>,
+    raw: Rc<Raw>,
 }
 
 impl VertexArray {
 
     /// Create from raw name.
     pub fn from_raw(id: GLuint) -> VertexArray {
-        VertexArray { raw: Rc::new(VertexArrayRaw { id: id }) }
+        VertexArray { raw: Rc::new(Raw { id: id }) }
     }
 
     /// Get raw name.
