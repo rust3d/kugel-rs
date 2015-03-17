@@ -10,6 +10,8 @@ use support::gl::types::*;
 use std::rc::Rc;
 use std::ptr;
 
+use kugel::*;
+
 static VERTEX_DATA: [GLfloat; 6] = [
      0.0,  0.5,
      0.5, -0.5,
@@ -27,19 +29,19 @@ fn main() {
         }
     );
 
-    let mut cx = kugel::context::Context::new();
+    let mut cx = context::Context::new();
 
-    let vs = match kugel::shader::Shader::compile_vertex_shader(include_str!("gl_triangle.vert")) {
+    let vs = match shader::Shader::compile_vertex_shader(include_str!("gl_triangle.vert")) {
         Ok(r) => r,
         Err(e) => panic!("{}", e),
     };
 
-    let fs = match kugel::shader::Shader::compile_fragment_shader(include_str!("gl_triangle.frag")) {
+    let fs = match shader::Shader::compile_fragment_shader(include_str!("gl_triangle.frag")) {
         Ok(r) => r,
         Err(e) => panic!("{}", e),
     };
 
-    let mut program = match kugel::program::Program::link_new(&[Rc::new(vs), Rc::new(fs)]) {
+    let mut program = match program::Program::link_new(&[Rc::new(vs), Rc::new(fs)]) {
         Ok(r) => r,
         Err(e) => panic!("{}", e),
     };

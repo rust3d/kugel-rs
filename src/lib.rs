@@ -5,7 +5,9 @@
 extern crate gl;
 #[macro_use] extern crate log;
 
-pub mod role;
+pub use role::{ Generator };
+
+mod role;
 pub mod gli;
 
 pub mod shader;

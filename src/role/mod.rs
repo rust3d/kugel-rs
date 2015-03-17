@@ -32,9 +32,3 @@ pub trait Generator: gli::Generate {
             .collect()
     }
 }
-
-pub trait Binder<Object> {
-    fn bind(&self, object: &Object) -> () {
-
-    }
-}

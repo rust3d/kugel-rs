@@ -5,27 +5,11 @@ use std::rc::Rc;
 use gli;
 use role;
 
-struct Va { id: GLuint }
-struct VaGen;
-
-impl role::Generator for VaGen {
-    type Object = Va;
+impl role::Generator for VertexArrayState {
+    type Object = VertexArray;
 }
 
-impl gli::IntoObject<Va> for Va {
-    fn new_object(id: GLuint) -> Va {
-        Va { id: id }
-    }
-}
-
-impl Drop for Va {
-    fn drop(&mut self) {
-        debug!("[{}]: cleanup && delete", self.id);
-        unsafe { gl::DeleteVertexArrays(1, &mut self.id) };
-    }
-}
-
-impl gli::Generate for VaGen {
+impl gli::Generate for VertexArrayState {
     fn gl_gen(size: usize) -> Vec<GLuint> {
         let mut ids: Vec<GLuint> = vec![0; size];
         unsafe { gl::GenVertexArrays(size as GLsizei, ids.as_mut_ptr()) };
@@ -33,13 +17,11 @@ impl gli::Generate for VaGen {
     }
 }
 
-
-
-
-// pub trait Gen {
-//     fn gen_one(&self) -> GLuint;
-//     fn gen(&self, size: usize) -> Vec<GLuint>;
-// }
+impl gli::IntoObject<VertexArray> for VertexArray {
+    fn new_object(id: GLuint) -> VertexArray {
+        VertexArray::from_raw(id)
+    }
+}
 
 /// Raw vertex array object wrapper to hide RAII mechanism.
 struct Raw {
@@ -71,39 +53,6 @@ impl VertexArrayState {
         VertexArrayState {
             binding: None,
         }
-    }
-
-    pub fn gen_one(&self) -> VertexArray {
-        debug!("gen, size = one");
-
-        let mut id = 0;
-
-        unsafe { gl::GenVertexArrays(1, &mut id) };
-
-        debug!("[{}]: generated", id);
-
-        VertexArray::from_raw(id)
-    }
-
-    pub fn gen(&self, size: usize) -> Vec<VertexArray> {
-        debug!("gen, size = {}", size);
-
-        let mut ids: Vec<GLuint> = vec![0; size];
-
-        unsafe { gl::GenVertexArrays(size as GLsizei, ids.as_mut_ptr()) };
-
-        debug!(
-            "[{}]: generated",
-            ids.iter()
-                .map(|id| id.to_string())
-                .collect::<Vec<String>>()
-                .connect(", ")
-        );
-
-        ids
-            .into_iter()
-            .map(|id| VertexArray::from_raw(id) )
-            .collect()
     }
 
     /// Bind vertex array object and return bound object variant.
