@@ -2,6 +2,45 @@ use gl;
 use gl::types::*;
 use std::rc::Rc;
 
+use gli;
+use role;
+
+struct Va { id: GLuint }
+struct VaGen;
+
+impl role::Generator for VaGen {
+    type Object = Va;
+}
+
+impl gli::IntoObject<Va> for Va {
+    fn new_object(id: GLuint) -> Va {
+        Va { id: id }
+    }
+}
+
+impl Drop for Va {
+    fn drop(&mut self) {
+        debug!("[{}]: cleanup && delete", self.id);
+        unsafe { gl::DeleteVertexArrays(1, &mut self.id) };
+    }
+}
+
+impl gli::Generate for VaGen {
+    fn gl_gen(size: usize) -> Vec<GLuint> {
+        let mut ids: Vec<GLuint> = vec![0; size];
+        unsafe { gl::GenVertexArrays(size as GLsizei, ids.as_mut_ptr()) };
+        ids
+    }
+}
+
+
+
+
+// pub trait Gen {
+//     fn gen_one(&self) -> GLuint;
+//     fn gen(&self, size: usize) -> Vec<GLuint>;
+// }
+
 /// Raw vertex array object wrapper to hide RAII mechanism.
 struct Raw {
     id: GLuint,
