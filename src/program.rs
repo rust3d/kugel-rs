@@ -227,7 +227,7 @@ impl Drop for Program {
     fn drop(&mut self) {
         debug!("[{}]: cleanup", self.id);
 
-        for shader in self.shaders.drain() {
+        for shader in &self.shaders {
             unsafe { gl::DetachShader(self.id, shader.get_id()) };
         }
 

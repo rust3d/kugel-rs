@@ -1,7 +1,3 @@
-#![feature(collections)]
-#![feature(optin_builtin_traits)]
-#![feature(unsafe_destructor)]
-
 extern crate gl;
 #[macro_use] extern crate log;
 

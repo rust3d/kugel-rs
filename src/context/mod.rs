@@ -9,8 +9,6 @@ pub struct Context {
     pub vertex_array: VertexArrayState,
 }
 
-impl !Send for Context {}
-
 impl Context {
     pub fn new() -> Context {
         Context {
